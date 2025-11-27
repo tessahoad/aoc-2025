@@ -1,3 +1,7 @@
+use crate::utils::hello_world;
+
+mod utils;
+
 fn main() {
-    println!("Hello, world!");
+    hello_world();
 }
