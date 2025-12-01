@@ -31,23 +31,23 @@ fn part_one() {
     println!("Part One Solution: {}", total)
 }
 
-fn part_two() {
-    let split_lines = INPUT.lines().map(split_string);
-    let mut first_locations: Vec<i32> = split_lines
-        .clone()
-        .map(|x| x.0.parse::<i32>().unwrap()).collect();
-    let second_locations = split_lines
-        .clone()
-        .map(|x| x.1.parse::<i32>().unwrap())
-        .chunk_by(|key| key);
+// fn part_two() {
+//     let split_lines = INPUT.lines().map(split_string);
+//     let mut first_locations: Vec<i32> = split_lines
+//         .clone()
+//         .map(|x| x.0.parse::<i32>().unwrap()).collect();
+//     let second_locations = split_lines
+//         .clone()
+//         .map(|x| x.1.parse::<i32>().unwrap())
+//         .chunk_by(|key| key);
 
-    let diff_list= first_locations.iter().zip(second_locations.iter()).map(int_diff);
-    let total: i32 = diff_list.sum();
-    println!("Part One Solution: {}", total)
-}
+//     let diff_list= first_locations.iter().zip(second_locations.iter()).map(int_diff);
+//     let total: i32 = diff_list.sum();
+//     println!("Part One Solution: {}", total)
+// }
 
 
 fn main() {
     part_one();
-    part_two();
+    // part_two();
 }
