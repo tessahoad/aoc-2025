@@ -3,18 +3,42 @@ use std::{fmt::Display, str::FromStr};
 static INPUT: &str = include_str!("../input/daytwo.txt");
 
 trait ProductIdValidator {
-    fn is_valid_product_id(&self) -> bool;
+    fn is_valid_product_id_by_one_repetition(&self) -> bool;
+    fn is_valid_product_id_by_many_repetitions(&self) -> bool;
 }
 
 impl ProductIdValidator for String {
-    fn is_valid_product_id(&self) -> bool {
-        let len = &self.len();
+    fn is_valid_product_id_by_one_repetition(&self) -> bool {
+        let len = self.len();
         if len % 2 == 1 {
             return true;
         }
         let midpoint = len / 2;
         let (left, right) = self.split_at(midpoint);
         return left.ne(right);
+    }
+    
+    fn is_valid_product_id_by_many_repetitions(&self) -> bool {
+        let len = self.len();
+        let midpoint = len / 2;
+        for i in 1..=midpoint {
+            let (head, tail) = self.split_at(i);
+            if tail == head {
+                return false;
+            }
+            let mut acc = tail;
+            while acc.len() > 0 {
+                if acc.starts_with(head) {
+                    acc = acc.strip_prefix(head).unwrap();
+                } else {
+                    break;
+                }
+            }
+            if acc.len() == 0 {
+                return false
+            }
+        }
+        return true;
     }
 }
 
@@ -47,38 +71,51 @@ impl FromStr for ProductIdRange {
     }
 }
 
+fn invalid_ids_by<F>(ids: Vec<ProductIdRange>, op: F) -> Result<Vec<u128>, String>
+where F: Fn(String) -> bool
+{
+    return Ok(ids.iter().flat_map(|range| {
+        let lower = range.lower_bound.parse::<u128>()
+            .map_err(|_| "Not valid numbers in bounds".to_string()).ok()?;
+        let upper = range.upper_bound.parse::<u128>()
+            .map_err(|_| "Not valid numbers in bounds".to_string()).ok()?;
+        
+
+            let invalids: Vec<u128> = (lower..=upper).filter(|num| {
+                !op(num.to_string())
+            }).collect();
+            return Some(invalids);
+        
+    }).flatten().collect());
+}
+
 fn part_one() -> Result<(), String> {
     let lines: Vec<&str> = INPUT.lines().collect();
     let unparsed_input = lines.first().unwrap();
     let parsed_ranges: Vec<ProductIdRange> = unparsed_input.split(",").map(ProductIdRange::from_str).collect::<Result<_, _>>()?;
 
-    let invalids = parsed_ranges.iter().map(|range| {
-        let l = range.lower_bound.parse::<u128>();
-        let u = range.upper_bound.parse::<u128>();
-        
-        match (l, u) {
-            (Ok(lower), Ok(upper)) => {
-                let invalids: Vec<u128> = (lower..=upper).filter(|num| {
-                    !num.to_string().is_valid_product_id()
-                }).collect();
-                return Ok(invalids);
-            }
-            _ => Err("Not valid numbers in bounds")
-        }
-    });
-
-    // let all_invalids: Vec<String> = invalids
-    //     .filter_map(Result::ok)
-    //     .flatten()
-    //     .map(|n| n.to_string())
-    //     .collect();
+    let invalids = invalid_ids_by(parsed_ranges, |s| s.is_valid_product_id_by_one_repetition())?;
 
     let sum_of_invalids: u128 = invalids
-        .filter_map(Result::ok)
-        .flatten()
+        .iter()
         .sum();
 
-    // println!("All invalids: {}", all_invalids.join(","));
+    println!("Sum of invalids: {}", sum_of_invalids);
+    
+    Ok(())
+}
+
+fn part_two() -> Result<(), String> {
+    let lines: Vec<&str> = INPUT.lines().collect();
+    let unparsed_input = lines.first().unwrap();
+    let parsed_ranges: Vec<ProductIdRange> = unparsed_input.split(",").map(ProductIdRange::from_str).collect::<Result<_, _>>()?;
+
+    let invalids = invalid_ids_by(parsed_ranges, |s| s.is_valid_product_id_by_many_repetitions())?;
+
+    let sum_of_invalids: u128 = invalids
+        .iter()
+        .sum();
+
     println!("Sum of invalids: {}", sum_of_invalids);
     
     Ok(())
@@ -86,6 +123,7 @@ fn part_one() -> Result<(), String> {
 
 fn main(){
     let _ = part_one();
+    let _ = part_two();
 }
 
 #[cfg(test)]
@@ -117,7 +155,29 @@ mod tests {
 
         for (input, expected) in test_cases {
             // When
-            let actual = input.to_string().is_valid_product_id();
+            let actual = input.to_string().is_valid_product_id_by_one_repetition();
+            // Then 
+            assert_eq!(actual, expected, "Failed for input: {}", input);
+        }
+    }
+
+    #[test]
+    fn test_product_id_is_valid_part_two() {
+        // Given
+        let test_cases = vec![
+            ("11", false),
+            ("12341234", false),
+            ("123", true),
+            ("123412", true),
+            ("123123123", false),
+            ("1212121212", false),
+            ("1111111", false),
+            ("1231231", true)
+        ];
+
+        for (input, expected) in test_cases {
+            // When
+            let actual = input.to_string().is_valid_product_id_by_many_repetitions();
             // Then 
             assert_eq!(actual, expected, "Failed for input: {}", input);
         }
