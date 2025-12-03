@@ -1,6 +1,5 @@
-use std::{fmt::Display, str::FromStr};
+use std::fmt::Display;
 
-use itertools::Itertools;
 
 static INPUT: &str = include_str!("../input/daythree.txt");
 
@@ -9,26 +8,49 @@ struct Bank {
     batteries: String,
 }
 
+fn find_largest_first_place_of_n_digit_number_in_string(n: usize, string: String) -> usize {
+    let len = string.len();
+    let (head, _) = string.split_at(len - n + 1);
+
+    let first_battery_value = head.chars().filter_map(|c| c.to_digit(10)).max();
+    let first_battery_position = head.chars()
+        .position(|c| c.to_digit(10) == first_battery_value)
+        .unwrap();
+
+    return first_battery_position;
+}
+
 impl Bank {
-    fn largest_joltage(&self) -> u32 {
+    fn two_digit_joltage(&self) -> u64 {
         let len = self.batteries.len();
         let (head, _) = self.batteries.split_at(len - 1);
 
-        let max_first_digit = head.chars().filter_map(|c| c.to_digit(10)).max();
-        let position_max_first_char = head.chars()
-            .position(|c| c.to_digit(10) == max_first_digit)
+        let first_battery_value = head.chars().filter_map(|c| c.to_digit(10)).max();
+        let first_battery_position = head.chars()
+            .position(|c| c.to_digit(10) == first_battery_value)
             .unwrap();
 
-        let (_, remaining) = self.batteries.split_at(position_max_first_char + 1);
+        let (_, remaining) = self.batteries.split_at(first_battery_position + 1);
 
-        let max_second_digit = remaining.chars().filter_map(|c| c.to_digit(10)).max();
-        let position_max_second_char = remaining.chars()
-            .position(|c| c.to_digit(10) == max_second_digit)
+        let second_battery_value = remaining.chars().filter_map(|c| c.to_digit(10)).max();
+        let second_batter_position = remaining.chars()
+            .position(|c| c.to_digit(10) == second_battery_value)
             .unwrap();
 
+        let largest_joltage_string = head.chars().nth(first_battery_position).unwrap().to_string() + &remaining.chars().nth(second_batter_position).unwrap().to_string();
+        return largest_joltage_string.parse::<u64>().unwrap();
+    }
 
-        let largest_joltage_string = head.chars().nth(position_max_first_char).unwrap().to_string() + &remaining.chars().nth(position_max_second_char).unwrap().to_string();
-        return largest_joltage_string.parse::<u32>().unwrap();
+    fn twelve_digit_joltage(&self) -> u64 { 
+        let mut remaining = self.batteries.as_str();
+        let joltage: String = (0..12).map( |i| {
+            let index_next_battery = find_largest_first_place_of_n_digit_number_in_string(12 - i, remaining.to_string());
+            let next_battery_value = remaining.chars().nth(index_next_battery).unwrap();
+            remaining = &remaining[index_next_battery + 1..];
+            next_battery_value
+        }).collect();
+
+        return joltage.parse::<u64>().unwrap();
     }
 }
 
@@ -42,18 +64,22 @@ impl Display for Bank {
 fn part_one() -> Result<(), String> {
     let lines: Vec<&str> = INPUT.lines().collect();
     let banks: Vec<Bank> = lines.iter().map(|line| Bank{ batteries: line.to_string() }).collect();
-    let joltage_sum: u32 = banks.iter().map(Bank::largest_joltage).sum();
+    let joltage_sum: u64 = banks.iter().map(Bank::two_digit_joltage).sum();
     println!("Sum of joltage: {}", joltage_sum);
     Ok(())
 }
 
 fn part_two() -> Result<(), String> {
-    todo!()
+    let lines: Vec<&str> = INPUT.lines().collect();
+    let banks: Vec<Bank> = lines.iter().map(|line| Bank{ batteries: line.to_string() }).collect();
+    let joltage_sum: u64 = banks.iter().map(Bank::twelve_digit_joltage).sum();
+    println!("Sum of joltage: {}", joltage_sum);
+    Ok(())
 }
 
 fn main(){
     let _ = part_one();
-    // let _ = part_two();
+    let _ = part_two();
 }
 
 #[cfg(test)]
@@ -62,7 +88,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_bank_largest_joltage() {
+    fn test_bank_two_digit_joltage() {
         // Given
         let test_cases = vec![
             (Bank{ batteries: "987654321111111".to_string() }, 98),
@@ -73,7 +99,25 @@ mod tests {
 
         for (input, expected) in test_cases {
             // When
-            let actual = input.largest_joltage();
+            let actual = input.two_digit_joltage();
+            // Then
+            assert_eq!(actual, expected, "Failed for input: {}", input)
+        }
+    }
+
+    #[test]
+    fn test_bank_twelve_digit_joltage() {
+        // Given
+        let test_cases = vec![
+            (Bank{ batteries: "987654321111111".to_string() }, 987654321111),
+            (Bank{ batteries: "811111111111119".to_string() }, 811111111119),
+            (Bank{ batteries: "234234234234278".to_string() }, 434234234278),
+            (Bank{ batteries: "818181911112111".to_string() }, 888911112111),
+        ];
+
+        for (input, expected) in test_cases {
+            // When
+            let actual = input.twelve_digit_joltage();
             // Then
             assert_eq!(actual, expected, "Failed for input: {}", input)
         }
