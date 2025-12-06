@@ -13,11 +13,11 @@ fn find_largest_first_place_of_n_digit_number_in_string(n: usize, string: String
     let (head, _) = string.split_at(len - n + 1);
 
     let first_battery_value = head.chars().filter_map(|c| c.to_digit(10)).max();
-    let first_battery_position = head.chars()
-        .position(|c| c.to_digit(10) == first_battery_value)
-        .unwrap();
+    
 
-    return first_battery_position;
+    head.chars()
+        .position(|c| c.to_digit(10) == first_battery_value)
+        .unwrap()
 }
 
 impl Bank {
@@ -38,7 +38,7 @@ impl Bank {
             .unwrap();
 
         let largest_joltage_string = head.chars().nth(first_battery_position).unwrap().to_string() + &remaining.chars().nth(second_batter_position).unwrap().to_string();
-        return largest_joltage_string.parse::<u64>().unwrap();
+        largest_joltage_string.parse::<u64>().unwrap()
     }
 
     fn twelve_digit_joltage(&self) -> u64 { 
@@ -50,7 +50,7 @@ impl Bank {
             next_battery_value
         }).collect();
 
-        return joltage.parse::<u64>().unwrap();
+        joltage.parse::<u64>().unwrap()
     }
 }
 

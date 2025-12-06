@@ -15,7 +15,7 @@ impl ProductIdValidator for String {
         }
         let midpoint = len / 2;
         let (left, right) = self.split_at(midpoint);
-        return left.ne(right);
+        left.ne(right)
     }
     
     fn is_valid_product_id_by_many_repetitions(&self) -> bool {
@@ -27,18 +27,18 @@ impl ProductIdValidator for String {
                 return false;
             }
             let mut acc = tail;
-            while acc.len() > 0 {
+            while !acc.is_empty() {
                 if acc.starts_with(head) {
                     acc = acc.strip_prefix(head).unwrap();
                 } else {
                     break;
                 }
             }
-            if acc.len() == 0 {
+            if acc.is_empty() {
                 return false
             }
         }
-        return true;
+        true
     }
 }
 
@@ -59,7 +59,7 @@ impl FromStr for ProductIdRange {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let lower_bound = s.split('-').next(); 
-        let upper_bound = s.split('-').last(); 
+        let upper_bound = s.split('-').next_back(); 
 
 
         match (lower_bound, upper_bound) {
@@ -74,7 +74,7 @@ impl FromStr for ProductIdRange {
 fn invalid_ids_by<F>(ids: Vec<ProductIdRange>, op: F) -> Result<Vec<u128>, String>
 where F: Fn(String) -> bool
 {
-    return Ok(ids.iter().flat_map(|range| {
+    Ok(ids.iter().flat_map(|range| {
         let lower = range.lower_bound.parse::<u128>()
             .map_err(|_| "Not valid numbers in bounds".to_string()).ok()?;
         let upper = range.upper_bound.parse::<u128>()
@@ -84,9 +84,9 @@ where F: Fn(String) -> bool
             let invalids: Vec<u128> = (lower..=upper).filter(|num| {
                 !op(num.to_string())
             }).collect();
-            return Some(invalids);
+            Some(invalids)
         
-    }).flatten().collect());
+    }).flatten().collect())
 }
 
 fn part_one() -> Result<(), String> {

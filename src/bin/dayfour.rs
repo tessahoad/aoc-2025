@@ -44,8 +44,8 @@ impl Grid {
             if maybe_neighbour.x == coord.x && maybe_neighbour.y == coord.y {
                 return false;
             }
-            let x_dist = if maybe_neighbour.x > coord.x { maybe_neighbour.x - coord.x } else { coord.x - maybe_neighbour.x };
-            let y_dist = if maybe_neighbour.y > coord.y { maybe_neighbour.y - coord.y } else { coord.y - maybe_neighbour.y };
+            let x_dist = maybe_neighbour.x.abs_diff(coord.x);
+            let y_dist = maybe_neighbour.y.abs_diff(coord.y);
             x_dist <= 1 && y_dist <= 1
         }).collect()
     }
@@ -119,8 +119,8 @@ fn part_two(input: &str) -> Result<usize, String> {
     })
     .map(|grid| {
         let removable = grid.removable_rolls();
-        let count = removable.len();
-        count
+        
+        removable.len()
     })
     .collect();
 

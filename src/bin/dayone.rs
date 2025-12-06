@@ -66,7 +66,7 @@ impl FromStr for Instruction {
 
 fn part_one() -> Result<(), String> {
     let instructions: Vec<Instruction> = INPUT.lines()
-        .map(|line| Instruction::from_str(line))
+        .map(Instruction::from_str)
         .collect::<Result<_, _>>()?;
     let dial = Dial{ current_position: 50, zero_clicks: 0 };
 
@@ -87,7 +87,7 @@ fn part_one() -> Result<(), String> {
 
 fn part_two() -> Result<(), String> {
     let instructions: Vec<Instruction> = INPUT.lines()
-        .map(|line| Instruction::from_str(line))
+        .map(Instruction::from_str)
         .collect::<Result<_, _>>()?;
     let dial = Dial{ current_position: 50, zero_clicks: 0 };
     
@@ -107,7 +107,7 @@ fn part_two() -> Result<(), String> {
 
 fn main() -> Result<(), String> {
     let _ = part_one();
-    return part_two();
+    part_two()
 }
 
 #[cfg(test)]

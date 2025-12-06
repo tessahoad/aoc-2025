@@ -5,8 +5,8 @@ static INPUT: &str = include_str!("../input/daysix.txt");
 
 #[derive(Copy, Clone)]
 enum Operator {
-    ADD,
-    MULTIPLY
+    Add,
+    Mulitply
 }
 
 impl FromStr for Operator {
@@ -14,8 +14,8 @@ impl FromStr for Operator {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
-            "+" => Ok(Operator::ADD),
-            "*" => Ok(Operator::MULTIPLY),
+            "+" => Ok(Operator::Add),
+            "*" => Ok(Operator::Mulitply),
             _ => Err("Invalid operator"),
         }
     }
@@ -29,15 +29,11 @@ struct MathsProblem {
 impl MathsProblem {
     fn resolve(&self) -> usize {
         match self.operator {
-            Operator::ADD => {
-                self.operands.iter().fold(0, |acc, state| {
-                    acc + state
-                })
+            Operator::Add => {
+                self.operands.iter().sum::<usize>()
             },
-            Operator::MULTIPLY => {
-                self.operands.iter().fold(1, |acc, state| {
-                    acc * state
-                })
+            Operator::Mulitply => {
+                self.operands.iter().product::<usize>()
             },
         }
     }
@@ -74,7 +70,7 @@ fn part_two(input: Vec<&str>) -> Result<usize, String> {
         .map(|s| Operator::from_str(s).unwrap())
         .collect();
 
-    let number_rows: Vec<&str> = (&input[..input.len() - 1]).to_vec();
+    let number_rows: Vec<&str> = input[..input.len() - 1].to_vec();
     
     let columns: Vec<String> = (0..number_rows.first().unwrap().len())
         .map(|i| {
@@ -89,7 +85,7 @@ fn part_two(input: Vec<&str>) -> Result<usize, String> {
         .map(|slice| slice.to_vec())    
         .collect();
 
-    let zipped: Vec<(Vec<String>, Operator)> = grouped_operands.into_iter().zip(operators.into_iter()).collect();
+    let zipped: Vec<(Vec<String>, Operator)> = grouped_operands.into_iter().zip(operators).collect();
 
     let problems: Vec<MathsProblem> = zipped.iter().map(|(raw_operands, operator)| {
         let operands: Vec<usize> = raw_operands.iter().map(|o| o.trim().parse().unwrap()).collect();

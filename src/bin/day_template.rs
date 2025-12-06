@@ -1,10 +1,10 @@
 static INPUT: &str = include_str!("../input/dayfour.txt");
 
-fn part_one(input: Vec<&str>) -> Result<usize, String> {
+fn part_one(_input: Vec<&str>) -> Result<usize, String> {
     todo!()
 }
 
-fn part_two(input: Vec<&str>) -> Result<usize, String> {
+fn part_two(_input: Vec<&str>) -> Result<usize, String> {
     todo!()
 }
 

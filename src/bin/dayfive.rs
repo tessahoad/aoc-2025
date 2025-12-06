@@ -7,8 +7,8 @@ struct IngredientId(usize);
 
 #[derive(PartialEq)]
 enum IngedientState {
-    FRESH,
-    SPOILED,
+    Fresh,
+    Spoiled,
 }
 
 impl FromStr for IngredientId {
@@ -36,7 +36,7 @@ impl FromStr for FreshIdRange {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let lower_bound = s.split('-').next(); 
-        let upper_bound = s.split('-').last(); 
+        let upper_bound = s.split('-').next_back(); 
 
 
         match (lower_bound, upper_bound) {
@@ -54,7 +54,7 @@ impl FromStr for FreshIdRange {
 fn part_one(input: Vec<&str>) -> Result<usize, String> {
     let fresh_id_ranges: Vec<FreshIdRange> = input.iter()
         .filter(|line| line.contains("-"))
-        .flat_map(|s: &&str| FreshIdRange::from_str(*s))
+        .flat_map(|s: &&str| FreshIdRange::from_str(s))
         .collect();
 
     let ingredient_ids: Vec<IngredientId> = input.iter()
@@ -65,15 +65,15 @@ fn part_one(input: Vec<&str>) -> Result<usize, String> {
     let ingredient_states: Vec<(IngredientId, IngedientState)> = ingredient_ids.into_iter().map(|id| {
         let id_in_any_range = fresh_id_ranges.iter().any(|range| range.lower_bound <= id.0 && id.0 <= range.upper_bound);
         match id_in_any_range {
-            true => (id, IngedientState::FRESH),
-            false => (id, IngedientState::SPOILED),
+            true => (id, IngedientState::Fresh),
+            false => (id, IngedientState::Spoiled),
         }
         
     }).collect();
     let fresh_ingredients: Vec<(IngredientId, IngedientState)> = ingredient_states.into_iter()
-    .filter(|(_, state)| *state == IngedientState::FRESH)
+    .filter(|(_, state)| *state == IngedientState::Fresh)
     .collect();
-    Ok(fresh_ingredients.iter().count())
+    Ok(fresh_ingredients.len())
 }
 
 fn add_new_range(mut acc: Vec<FreshIdRange>, range_to_add: FreshIdRange) -> Vec<FreshIdRange> {
@@ -104,7 +104,7 @@ fn add_new_range(mut acc: Vec<FreshIdRange>, range_to_add: FreshIdRange) -> Vec<
 fn part_two(input: Vec<&str>) -> Result<usize, String> {
     let fresh_id_ranges: Vec<FreshIdRange> = input.iter()
         .filter(|line| line.contains("-"))
-        .flat_map(|s: &&str| FreshIdRange::from_str(*s))
+        .flat_map(|s: &&str| FreshIdRange::from_str(s))
         .collect();
 
     let ranges_without_intersections = fresh_id_ranges
