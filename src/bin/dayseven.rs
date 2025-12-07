@@ -1,4 +1,4 @@
-use std::{fmt::{self, Display}, io::{self, Write}, str::FromStr, thread, time::Duration};
+use std::{collections::HashMap, fmt::{self, Display}, io::{self, Write}, str::FromStr, thread, time::Duration};
 
 use itertools::Itertools;
 
@@ -148,7 +148,7 @@ impl ManifoldState {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 struct Coordinate { x: isize, y: isize, manifold_object: ManifoldObject, visited: bool }
 
 impl Coordinate {
@@ -174,7 +174,7 @@ impl Coordinate {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 enum ManifoldObject {
     Origin,
     Space,
@@ -196,6 +196,58 @@ impl FromStr for ManifoldObject {
     }
 }
 
+struct Dag {
+    edges: HashMap<Coordinate, Vec<Coordinate>>
+}
+
+impl Dag {
+    fn from_manifold_state(mf: &ManifoldState) -> Dag {
+        let coords_with_objects: Vec<Coordinate> = mf.coords.iter()
+            .filter(|c| matches!(
+                &c.manifold_object,
+                ManifoldObject::Origin | ManifoldObject::TachyonBeam | ManifoldObject::Splitter { triggered: true }
+            ))
+            .cloned()
+            .collect();
+
+        let edges = coords_with_objects.iter().map(|coord| {
+            let children: Vec<Coordinate> = coords_with_objects.iter().filter(|c| {
+                let is_beam_child = c.x == coord.x + 1 && c.y == coord.y
+                    && matches!(coord.manifold_object, ManifoldObject::Origin | ManifoldObject::TachyonBeam);
+
+                let is_splitter_child = c.x == coord.x && (c.y == coord.y - 1 || c.y == coord.y + 1)
+                    && matches!(coord.manifold_object, ManifoldObject::Splitter { triggered: true })
+                    && matches!(c.manifold_object, ManifoldObject::TachyonBeam);
+
+                is_beam_child || is_splitter_child
+            })
+            .cloned()
+            .collect();
+            (coord.clone(), children)
+        }).collect();
+
+        Dag { edges }
+    }
+    fn count_paths_from_node(&self, node: Coordinate, cache: &mut HashMap<Coordinate, usize>) -> usize {
+        if cache.contains_key(&node) {
+            return cache[&node]
+        } else if self.edges.get(&node).unwrap().is_empty() {
+            return 1
+        }
+        let total = self.edges.get(&node).unwrap().iter().map(|child| self.count_paths_from_node(child.clone(), cache)).sum();
+        cache.insert(node, total);
+        total
+    }
+
+    fn count_all_paths(&self) -> usize {
+        let mut cache: HashMap<Coordinate, usize> = HashMap::new();
+        let starting_node = self.edges.iter()
+            .find(|(c, _)| matches!(c.manifold_object, ManifoldObject::Origin))
+            .unwrap().0
+            .clone();
+        self.count_paths_from_node(starting_node, &mut cache)
+    }
+}
 
 fn part_one(input: Vec<&str>) -> Result<usize, String> {
     let initial_state = ManifoldState::from_input(input)?;
@@ -217,15 +269,30 @@ fn part_one(input: Vec<&str>) -> Result<usize, String> {
 }
 
 fn part_two(input: Vec<&str>) -> Result<usize, String> {
-    todo!()
+    let initial_state = ManifoldState::from_input(input)?;
+    let manifold_states: Vec<ManifoldState> = std::iter::successors(
+        Some(initial_state.clone()),
+        |current| {
+            let next_state = current.progress_beam();
+            Some(next_state)
+        }
+    )
+    .take_while(|state| !state.fully_progressed())
+    .collect();
+
+    let final_state = manifold_states.iter().next_back().unwrap().progress_beam();
+    final_state.display_animated(20);
+
+    let dag = Dag::from_manifold_state(&final_state);
+    let total_paths = dag.count_all_paths();
+    Ok(total_paths)
 }
 
 fn main() {
-    // Run with animation: 50ms delay, show 15 rows above/below current
     let result = part_one(INPUT.lines().collect::<Vec<&str>>());
     println!("\nPart one: {:?}", result);
-    // let result = part_two(INPUT.lines().collect::<Vec<&str>>());
-    // println!("Part two: {:?}", result);
+    let result = part_two(INPUT.lines().collect::<Vec<&str>>());
+    println!("Part two: {:?}", result);
 }
 
 #[cfg(test)]
@@ -287,6 +354,6 @@ mod tests {
         let result = part_two(input).unwrap();
         
         // Then
-        assert_eq!(1, 1);
+        assert_eq!(result, 40);
     }
 }
