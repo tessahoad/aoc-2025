@@ -1,4 +1,4 @@
-use std::{fmt::{self, Display}, str::FromStr};
+use std::{fmt::{self, Display}, io::{self, Write}, str::FromStr, thread, time::Duration};
 
 use itertools::Itertools;
 
@@ -104,36 +104,49 @@ impl ManifoldState {
             None => false,
         }
     }
-}
 
-impl fmt::Display for ManifoldState {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        if self.coords.is_empty() {
-            return Ok(());
-        }
-
-
-        let max_x = self.coords.iter().map(|c| c.x).max().unwrap_or(0);
-        let max_y = self.coords.iter().map(|c| c.y).max().unwrap_or(0);
+    fn display_animated(&self, window_size: isize) {
+        use std::fmt::Write as FmtWrite;
         
-        for x in 0..=max_x {
-            for y in 0..=max_y {
-                let coord = self.coords.iter()
-                    .find(|c| c.x == x && c.y == y);
-                
-                match coord {
-                    Some(c) => write!(f, "{}", c.manifold_object.to_string())?,
-                    _ => return Err(fmt::Error),
+        let current_row = self.last_visited_row_index.unwrap_or(0);
+        let max_row = self.number_rows();
+        let max_col = self.coords.iter().map(|c| c.y).max().unwrap_or(0);
+        
+        let start_row = (current_row - window_size).max(0);
+        let end_row = (current_row + window_size).min(max_row);
+        
+        let mut frame = String::with_capacity(((end_row - start_row + 1) * (max_col + 10)) as usize);
+        
+        frame.push_str("\x1B[2J\x1B[1;1H"); // Clear display to simulate animation
+
+        writeln!(frame, "┌─ Tachyon Manifold ─── Row {}/{} ───┐", current_row, max_row).unwrap();
+        writeln!(frame).unwrap();
+        
+        for x in start_row..=end_row {
+            let current_line_indicator = if x == current_row { "►" } else { " " };
+            write!(frame, "{} ", current_line_indicator).unwrap();
+            
+            for y in 0..=max_col {
+                if let Some(coord) = self.coords.iter().find(|c| c.x == x && c.y == y) {
+                    let display = match &coord.manifold_object {
+                        ManifoldObject::Origin => "\x1B[33mS\x1B[0m",      // Yellow
+                        ManifoldObject::TachyonBeam => "\x1B[36m│\x1B[0m", // Cyan
+                        ManifoldObject::Splitter { triggered: true } => "\x1B[32m^\x1B[0m",  // Green
+                        ManifoldObject::Splitter { triggered: false } => "\x1B[31m^\x1B[0m", // Red
+                        ManifoldObject::Space => "·",                      
+                    };
+                    frame.push_str(display);
                 }
             }
-            if x < max_x {
-                writeln!(f)?;
-            }
+            writeln!(frame).unwrap();
         }
-        Ok(())
+        
+        writeln!(frame).unwrap();
+    
+        print!("{}", frame);
+        io::stdout().flush().unwrap();
     }
 }
-
 
 #[derive(Debug, Clone)]
 struct Coordinate { x: isize, y: isize, manifold_object: ManifoldObject, visited: bool }
@@ -183,17 +196,6 @@ impl FromStr for ManifoldObject {
     }
 }
 
-impl Display for ManifoldObject {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        match self {
-            ManifoldObject::Origin => write!(f, "S"),
-            ManifoldObject::Space => write!(f, "."),
-            ManifoldObject::Splitter { .. } => write!(f, "^"),
-            ManifoldObject::TachyonBeam => write!(f, "|"),
-        }
-    }
-}
-
 
 fn part_one(input: Vec<&str>) -> Result<usize, String> {
     let initial_state = ManifoldState::from_input(input)?;
@@ -204,10 +206,7 @@ fn part_one(input: Vec<&str>) -> Result<usize, String> {
             Some(next_state)
         }
     )
-    .inspect(
-        |state| {
-        println!("Manifold state:\n{} \n", "Analyzed");
-    })
+    .inspect(|state| state.display_animated(20))
     .take_while(|state| !state.fully_progressed())
     .collect();
 
@@ -222,8 +221,9 @@ fn part_two(input: Vec<&str>) -> Result<usize, String> {
 }
 
 fn main() {
+    // Run with animation: 50ms delay, show 15 rows above/below current
     let result = part_one(INPUT.lines().collect::<Vec<&str>>());
-    println!("Part one: {:?}", result);
+    println!("\nPart one: {:?}", result);
     // let result = part_two(INPUT.lines().collect::<Vec<&str>>());
     // println!("Part two: {:?}", result);
 }
