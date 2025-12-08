@@ -1,4 +1,4 @@
-use std::{collections::HashMap, hash::Hash, str::FromStr};
+use std::{collections::{HashMap, HashSet}, hash::Hash, str::FromStr};
 
 use itertools::Itertools;
 use uuid::Uuid;
@@ -35,7 +35,6 @@ struct Graph {
 }
 fn part_one(input: Vec<&str>) -> Result<usize, String> {
     let junction_boxes: Vec<JunctionBox> = input.iter().map(|i| JunctionBox::from_str(i)).collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
-    let all_boxes = junction_boxes.clone();
     let edges: Vec<(JunctionBox, JunctionBox, f64)> = junction_boxes.into_iter().combinations(2).map(|pair| {
         let box_1 = pair[0].clone();
         let box_2 = pair[1].clone();
@@ -87,15 +86,43 @@ fn part_one(input: Vec<&str>) -> Result<usize, String> {
     Ok(circuit_product)
 }
 
-fn part_two(_input: Vec<&str>) -> Result<usize, String> {
-    todo!()
+fn part_two(input: Vec<&str>) -> Result<usize, String> {
+    let junction_boxes: Vec<JunctionBox> = input.iter().map(|i| JunctionBox::from_str(i)).collect::<Result<Vec<_>, _>>().map_err(|e| e.to_string())?;
+    let num_boxes = junction_boxes.len();
+    let edges: Vec<(JunctionBox, JunctionBox, f64)> = junction_boxes.into_iter().combinations(2).map(|pair| {
+        let box_1 = pair[0].clone();
+        let box_2 = pair[1].clone();
+        (box_1.clone(), box_2.clone(), JunctionBox::euclidean_distance(box_1, box_2))
+    }).collect();
+    let graph = Graph { edges };
+    let starting_node:JunctionBox = graph.edges.first().unwrap().0.clone();
+    let mut visited_nodes = HashSet::with_capacity(num_boxes);
+    let mut last_added_edge = graph.edges.first().unwrap().clone();
+    visited_nodes.insert(starting_node);
+    
+    while (visited_nodes.len() < num_boxes) {
+        let edge_to_add = graph.edges.iter().filter(|(x, y, _)| {
+            (visited_nodes.contains(x) || visited_nodes.contains(y)) && !(visited_nodes.contains(x) && visited_nodes.contains(y))
+        }).min_by(|(_, _, weight1), (_, _, weight2)| weight1.partial_cmp(weight2).unwrap()).unwrap();
+
+        let node_to_add = if visited_nodes.contains(&edge_to_add.0) {
+            &edge_to_add.1
+        } else {
+            &edge_to_add.0
+        };
+
+        visited_nodes.insert(node_to_add.clone());
+        last_added_edge = edge_to_add.clone();
+        println!("Visited {} nodes", visited_nodes.len())
+    }
+    Ok(last_added_edge.0.x * last_added_edge.1.x)
 }
 
 fn main() {
-    let result = part_one(INPUT.lines().collect::<Vec<&str>>());
-    println!("Part one: {:?}", result);
-    // let result = part_two(INPUT.lines().collect::<Vec<&str>>());
-    // println!("Part two: {:?}", result);
+    // let result = part_one(INPUT.lines().collect::<Vec<&str>>());
+    // println!("Part one: {:?}", result);
+    let result = part_two(INPUT.lines().collect::<Vec<&str>>());
+    println!("Part two: {:?}", result);
 }
 
 #[cfg(test)]
@@ -165,6 +192,6 @@ mod tests {
         let result = part_two(input).unwrap();
         
         // Then
-        assert_eq!(1, 1);
+        assert_eq!(result, 25272);
     }
 }
