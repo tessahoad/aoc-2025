@@ -100,7 +100,7 @@ fn part_two(input: Vec<&str>) -> Result<usize, String> {
     let mut last_added_edge = graph.edges.first().unwrap().clone();
     visited_nodes.insert(starting_node);
     
-    while (visited_nodes.len() < num_boxes) {
+    while visited_nodes.len() < num_boxes {
         let edge_to_add = graph.edges.iter().filter(|(x, y, _)| {
             (visited_nodes.contains(x) || visited_nodes.contains(y)) && !(visited_nodes.contains(x) && visited_nodes.contains(y))
         }).min_by(|(_, _, weight1), (_, _, weight2)| weight1.partial_cmp(weight2).unwrap()).unwrap();
@@ -119,8 +119,8 @@ fn part_two(input: Vec<&str>) -> Result<usize, String> {
 }
 
 fn main() {
-    // let result = part_one(INPUT.lines().collect::<Vec<&str>>());
-    // println!("Part one: {:?}", result);
+    let result = part_one(INPUT.lines().collect::<Vec<&str>>());
+    println!("Part one: {:?}", result);
     let result = part_two(INPUT.lines().collect::<Vec<&str>>());
     println!("Part two: {:?}", result);
 }
